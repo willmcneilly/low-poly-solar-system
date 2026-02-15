@@ -2,6 +2,8 @@
 
 A cute, low-poly solar system simulation built with Three.js. All 8 planets orbit the Sun with their major moons, complete with info panels, follow-camera mode, and time/scale controls.
 
+**[Live Demo](https://willmcneilly.github.io/low-poly-solar-system/)**
+
 ## Getting Started
 
 Requires Node.js 22+.
