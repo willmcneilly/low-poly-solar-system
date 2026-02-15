@@ -271,15 +271,59 @@ const SUN_DATA = {
   realRadius: 109.0, // relative to Earth
 };
 
+// Deterministic hash from vertex position — ensures duplicate seam vertices
+// at the same position always get the same displacement and colour
+function hashPosition(x, y, z) {
+  const h = Math.sin(x * 127.1 + y * 311.7 + z * 74.7) * 43758.5453;
+  return h - Math.floor(h); // 0-1
+}
+
 function createLowPolyMesh(radius, color, isSun = false) {
-  const geometry = new THREE.IcosahedronGeometry(radius, 1);
-  let material;
+  const geometry = new THREE.IcosahedronGeometry(radius, isSun ? 1 : 2);
+
   if (isSun) {
-    material = new THREE.MeshBasicMaterial({ color });
-  } else {
-    material = new THREE.MeshStandardMaterial({ color, flatShading: true });
+    return new THREE.Mesh(geometry, new THREE.MeshBasicMaterial({ color }));
   }
-  return new THREE.Mesh(geometry, material);
+
+  // Displace vertices — hash-based so UV seam duplicates get identical displacement
+  const pos = geometry.attributes.position;
+  for (let i = 0; i < pos.count; i++) {
+    const x = pos.getX(i);
+    const y = pos.getY(i);
+    const z = pos.getZ(i);
+    const len = Math.sqrt(x * x + y * y + z * z);
+    const h = hashPosition(x, y, z);
+    const scale = radius * (1 + (h - 0.5) * 0.06);
+    pos.setXYZ(i, (x / len) * scale, (y / len) * scale, (z / len) * scale);
+  }
+  pos.needsUpdate = true;
+
+  // Convert to non-indexed for sharp flat-shaded faces
+  const nonIndexed = geometry.toNonIndexed();
+
+  // Per-face colour variation
+  const baseColor = new THREE.Color(color);
+  const facePos = nonIndexed.attributes.position;
+  const colors = new Float32Array(facePos.count * 3);
+  for (let i = 0; i < facePos.count; i += 3) {
+    const x = facePos.getX(i);
+    const y = facePos.getY(i);
+    const z = facePos.getZ(i);
+    const shade = 0.75 + hashPosition(z, x, y) * 0.5;
+    const c = baseColor.clone().multiplyScalar(shade);
+    for (let v = 0; v < 3; v++) {
+      colors[(i + v) * 3] = c.r;
+      colors[(i + v) * 3 + 1] = c.g;
+      colors[(i + v) * 3 + 2] = c.b;
+    }
+  }
+  nonIndexed.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+
+  const material = new THREE.MeshStandardMaterial({
+    vertexColors: true,
+    flatShading: true,
+  });
+  return new THREE.Mesh(nonIndexed, material);
 }
 
 function createRings(planetRadius) {
