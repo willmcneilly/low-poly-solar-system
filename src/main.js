@@ -7,7 +7,8 @@ import { createUI } from './ui.js';
 
 // Scene
 const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x050510);
+scene.background = new THREE.Color(0x0e0a1a);
+scene.fog = new THREE.FogExp2(0x0e0a1a, 0.0012);
 
 // Camera
 const camera = new THREE.PerspectiveCamera(
@@ -39,12 +40,33 @@ const sunLight = new THREE.PointLight(0xffffee, 2, 500);
 sunLight.position.set(0, 0, 0);
 scene.add(sunLight);
 
-// Starfield
-function createStarfield() {
-  const count = 2000;
+// Diamond-shaped star texture for low-poly feel
+function createDiamondTexture() {
+  const size = 32;
+  const canvas = document.createElement('canvas');
+  canvas.width = size;
+  canvas.height = size;
+  const ctx = canvas.getContext('2d');
+  const half = size / 2;
+  ctx.beginPath();
+  ctx.moveTo(half, 0);
+  ctx.lineTo(size, half);
+  ctx.lineTo(half, size);
+  ctx.lineTo(0, half);
+  ctx.closePath();
+  ctx.fillStyle = '#ffffff';
+  ctx.fill();
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.premultiplyAlpha = false;
+  return texture;
+}
+const starTexture = createDiamondTexture();
+
+// Starfield — two layers for depth
+function createStarLayer(count, minR, maxR, size, color, opacity) {
   const positions = new Float32Array(count * 3);
   for (let i = 0; i < count; i++) {
-    const r = 300 + Math.random() * 700;
+    const r = minR + Math.random() * (maxR - minR);
     const theta = Math.random() * Math.PI * 2;
     const phi = Math.acos(2 * Math.random() - 1);
     positions[i * 3] = r * Math.sin(phi) * Math.cos(theta);
@@ -54,13 +76,25 @@ function createStarfield() {
   const geometry = new THREE.BufferGeometry();
   geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
   const material = new THREE.PointsMaterial({
-    color: 0xffffff,
-    size: 0.5,
+    color,
+    size,
+    map: starTexture,
     sizeAttenuation: true,
+    transparent: true,
+    opacity,
+    alphaTest: 0.01,
   });
+  // Exempt from fog so distant stars don't vanish
+  material.fog = false;
   return new THREE.Points(geometry, material);
 }
-scene.add(createStarfield());
+
+// Bright nearby stars
+scene.add(createStarLayer(600, 200, 500, 1.2, 0xffffff, 0.9));
+// Soft distant stars — larger, dimmer, slightly blue-purple
+scene.add(createStarLayer(800, 500, 900, 2.5, 0xbbbbff, 0.3));
+// Faint dust — very large, very dim, gives that hazy glow
+scene.add(createStarLayer(300, 300, 800, 5.0, 0x8866aa, 0.08));
 
 // Solar system
 const { solarSystem, bodies } = createSolarSystem();

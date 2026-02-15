@@ -6,8 +6,8 @@ export function createUI() {
     <div id="panel-body">
       <div class="ui-row">
         <label>Speed</label>
-        <input type="range" id="speed-slider" min="0" max="100" value="10" step="1">
-        <span id="speed-value">1.0x</span>
+        <input type="range" id="speed-slider" min="0" max="100" value="4" step="1">
+        <span id="speed-value">0.3x</span>
         <button id="pause-btn">Pause</button>
       </div>
       <div class="ui-row">
@@ -330,7 +330,7 @@ export function createUI() {
   const infoNext = document.getElementById('info-next');
 
   const state = {
-    timeScale: 1.0,
+    timeScale: 0.25,
     paused: false,
     scaleFactor: 0, // 0 = pretty, 1 = realistic
     totalEarthDays: 0,
