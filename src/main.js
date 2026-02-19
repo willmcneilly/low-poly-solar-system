@@ -17,7 +17,7 @@ const camera = new THREE.PerspectiveCamera(
   0.1,
   2000,
 );
-camera.position.set(30, 25, 40);
+camera.position.set(0, 140, 0.1);
 
 // Renderer
 const renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -30,7 +30,7 @@ const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
 controls.dampingFactor = 0.05;
 controls.minDistance = 5;
-controls.maxDistance = 500;
+controls.maxDistance = 800;
 
 // Lighting
 const ambientLight = new THREE.AmbientLight(0xffffff, 0.15);
